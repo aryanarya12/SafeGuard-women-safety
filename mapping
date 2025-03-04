@@ -1,0 +1,53 @@
+import pandas as pd
+import folium
+from folium.plugins import HeatMap
+from sklearn.cluster import DBSCAN
+import numpy as np
+
+# Load historical crime data (CSV with 'latitude', 'longitude', 'timestamp')
+file_path = "C:\\Users\\DEVENDER\\Desktop\\crime mappong\\Delhi Accident Data.csv"
+crime_data = pd.read_csv(file_path)
+
+# Standardize column names (remove spaces, convert to lowercase)
+crime_data.columns = crime_data.columns.str.strip().str.lower()
+print("Columns in dataset:", crime_data.columns)  # Debugging step
+
+# Ensure 'timestamp' column exists
+if 'timestamp' not in crime_data.columns:
+    raise KeyError("Column 'timestamp' not found. Check CSV file for correct column name.")
+
+# Convert timestamp to datetime format
+crime_data['timestamp'] = pd.to_datetime(crime_data['timestamp'], errors='coerce')
+
+# Drop rows with invalid timestamps
+crime_data = crime_data.dropna(subset=['timestamp'])
+
+# Filter recent crimes (e.g., last 30 days)
+if not crime_data.empty:
+    recent_crimes = crime_data[crime_data['timestamp'] >= (crime_data['timestamp'].max() - pd.Timedelta(days=30))]
+else:
+    recent_crimes = crime_data
+
+if 'latitude' not in crime_data.columns or 'longitude' not in crime_data.columns:
+    raise KeyError("Columns 'latitude' and/or 'longitude' not found in the dataset.")
+
+if not recent_crimes.empty:
+    coords = recent_crimes[['latitude', 'longitude']].dropna().values
+else:
+    coords = []
+
+if len(coords) > 0:
+    db = DBSCAN(eps=0.01, min_samples=5).fit(coords)
+    recent_crimes['cluster'] = db.labels_
+else:
+    recent_crimes['cluster'] = np.nan  
+if not recent_crimes.empty:
+    crime_map = folium.Map(location=[recent_crimes['latitude'].mean(), recent_crimes['longitude'].mean()], zoom_start=12)
+
+    
+    heat_data = recent_crimes[['latitude', 'longitude']].values.tolist()
+    HeatMap(heat_data).add_to(crime_map)
+    crime_map.save("crime_hotspots.html")
+    print("Crime hotspot map saved as 'crime_hotspots.html'")
+else:
+    print("No recent crime data available to generate a heatmap.")

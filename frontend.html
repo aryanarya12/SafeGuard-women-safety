@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crime Mapping Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            color: white;
+            border-radius: 5px;
+        }
+        .btn-cctv { background: #007bff; }
+        .btn-gps { background: #28a745; }
+        .btn-sos { background: #dc3545; }
+        #map { height: 400px; width: 100%; margin-top: 20px; }
+    </style>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+<body>
+    <div class="container">
+        <h1>Crime Mapping & Safety Dashboard</h1>
+        
+        <button class="btn-cctv" onclick="startCCTV()">Start CCTV Recognition</button>
+        <button class="btn-gps" onclick="getSpeed()">Check GPS Speed</button>
+        <button class="btn-sos" onclick="sendSOS()">Trigger SOS Alert</button>
+        
+        <h3>Status: <span id="status">Idle</span></h3>
+        <h3>Speed: <span id="speed">N/A</span></h3>
+        
+        <div id="map"></div>
+    </div>
+    
+    <script>
+        function startCCTV() {
+            document.getElementById('status').innerText = 'Scanning...';
+            fetch('/api/cctv')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('status').innerText = data.message;
+                })
+                .catch(() => {
+                    document.getElementById('status').innerText = 'Error starting CCTV';
+                });
+        }
+
+        function getSpeed() {
+            fetch('/api/gps')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('speed').innerText = data.speed + ' km/h';
+                })
+                .catch(() => {
+                    document.getElementById('speed').innerText = 'Error fetching speed';
+                });
+        }
+
+        function sendSOS() {
+            fetch('/api/sos', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                })
+                .catch(() => {
+                    alert('Error sending SOS');
+                });
+        }
+
+        function loadMap() {
+            var map = L.map('map').setView([28.6300, 77.2200], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            let crimeHotspots = [
+                { lat: 28.6500, lon: 77.2000 },
+                { lat: 28.6350, lon: 77.2150 },
+                { lat: 28.6200, lon: 77.2300 },
+                { lat: 28.6100, lon: 77.2500 },
+                { lat: 28.6400, lon: 77.1900 }
+            ];
+
+            crimeHotspots.forEach((spot) => {
+                L.circleMarker([spot.lat, spot.lon], {
+                    radius: 6,
+                    color: 'red',
+                    fillColor: 'red',
+                    fillOpacity: 0.5
+                }).addTo(map).bindPopup("Crime Hotspot");
+            });
+        }
+
+        window.onload = loadMap;
+    </script>
+</body>
+</html>
