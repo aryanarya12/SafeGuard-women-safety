@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeGuard - Women Safety Network</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-logo">
+                <i class="fas fa-shield-alt"></i> SafeGuard
+            </div>
+            <ul class="navbar-menu">
+                <li><a href="#home" class="navbar-link">Home</a></li>
+                <li><a href="#features" class="navbar-link">Features</a></li>
+                <li><a href="#dashboard" class="navbar-link">Dashboard</a></li>
+                <li><a href="#about" class="navbar-link">About</a></li>
+                <li><a href="#contact" class="navbar-link">Contact</a></li>
+            </ul>
+            <div class="version-info">
+                v2.0 - Updated March 2026
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h1>Your Safety is Our Priority</h1>
+            <p>Advanced crime mapping, safe routing, and emergency alert system for women's security</p>
+            <div class="hero-buttons">
+                <a href="#dashboard" class="btn btn-primary">Get Started</a>
+                <a href="#features" class="btn btn-secondary">Learn More</a>
+            </div>
+        </div>
+        <div class="hero-image">
+            <i class="fas fa-map-marked-alt"></i>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <h2>Our Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-map-pin"></i></div>
+                <h3>Crime Mapping</h3>
+                <p>Real-time visualization of crime hotspots and unsafe areas. Stay informed about high-risk zones in your city.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-route"></i></div>
+                <h3>Safe Routes</h3>
+                <p>Get the safest routes to your destination. Our AI avoids crime hotspots and provides alternative paths.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-camera"></i></div>
+                <h3>CCTV Monitoring</h3>
+                <p>Connected to public CCTV network. Real-time monitoring and facial recognition for threat detection.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-bell"></i></div>
+                <h3>Emergency SOS</h3>
+                <p>One-click emergency alert. Instantly notify authorities and emergency contacts in case of danger.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-location-dot"></i></div>
+                <h3>GPS Tracking</h3>
+                <p>Real-time location tracking with speed monitoring. Safe and secure with full privacy control.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
+                <h3>Mobile Access</h3>
+                <p>Access all features on your mobile device. Check safety information anytime, anywhere.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard Section -->
+    <section id="dashboard" class="dashboard">
+        <h2>Safety Dashboard</h2>
+        <div class="dashboard-container">
+            <!-- Status Cards -->
+            <div class="status-section">
+                <div class="status-card">
+                    <div class="status-icon safe"><i class="fas fa-check-circle"></i></div>
+                    <h3>Current Status</h3>
+                    <p id="current-status">Safe</p>
+                </div>
+                <div class="status-card">
+                    <div class="status-icon"><i class="fas fa-map-marker-alt"></i></div>
+                    <h3>Your Location</h3>
+                    <p id="current-location">Waiting for location...</p>
+                </div>
+                <div class="status-card">
+                    <div class="status-icon"><i class="fas fa-tachometer-alt"></i></div>
+                    <h3>Movement Speed</h3>
+                    <p id="current-speed">0 km/h</p>
+                </div>
+                <div class="status-card">
+                    <div class="status-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                    <h3>Nearby Incidents</h3>
+                    <p id="nearby-incidents">0 nearby</p>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <h3>Quick Actions</h3>
+                <div class="control-buttons">
+                    <button class="btn btn-action btn-cctv" onclick="startCCTV()">
+                        <i class="fas fa-camera"></i> Start CCTV Monitoring
+                    </button>
+                    <button class="btn btn-action btn-location" onclick="getLocation()">
+                        <i class="fas fa-crosshairs"></i> Get My Location
+                    </button>
+                    <button class="btn btn-action btn-route" onclick="findSafeRoute()">
+                        <i class="fas fa-directions"></i> Find Safe Route
+                    </button>
+                    <button class="btn btn-action btn-sos" onclick="triggerSOS()">
+                        <i class="fas fa-phone"></i> Emergency SOS
+                    </button>
+                </div>
+            </div>
+
+            <!-- Map Section -->
+            <div class="map-section">
+                <h3>Crime Hotspot Map</h3>
+                <div id="map"></div>
+            </div>
+
+            <!-- Information Section -->
+            <div class="info-section">
+                <div class="info-box">
+                    <h3>Safe Route to Destination</h3>
+                    <div class="route-input">
+                        <input type="text" id="destination" placeholder="Enter your destination">
+                        <button class="btn btn-primary" onclick="calculateRoute()">Calculate</button>
+                    </div>
+                    <div id="route-result" class="route-result"></div>
+                </div>
+                <div class="info-box">
+                    <h3>Recent Alerts</h3>
+                    <div id="alerts-list" class="alerts-list">
+                        <p>No recent alerts</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Statistics Section -->
+    <section class="statistics">
+        <h2>Safety Statistics</h2>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <h3 id="stat-incidents">0</h3>
+                <p>Incidents Tracked</p>
+            </div>
+            <div class="stat-item">
+                <h3 id="stat-routes">0</h3>
+                <p>Safe Routes Generated</p>
+            </div>
+            <div class="stat-item">
+                <h3 id="stat-users">0</h3>
+                <p>Active Users</p>
+            </div>
+            <div class="stat-item">
+                <h3 id="stat-alerts">0</h3>
+                <p>SOS Alerts Sent</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about">
+        <h2>About SafeGuard</h2>
+        <div class="about-content">
+            <div class="about-text">
+                <p>
+                    SafeGuard is a comprehensive women safety network designed to empower women with real-time information about their surroundings and provide immediate assistance in times of need.
+                </p>
+                <p>
+                    Our platform combines advanced technology including crime mapping, facial recognition, GPS tracking, and emergency alert systems to create a safer environment for women in urban areas.
+                </p>
+                <h3>Our Mission</h3>
+                <p>
+                    To leverage technology and community cooperation to significantly reduce crimes against women and provide a secure, empowering environment for all.
+                </p>
+            </div>
+            <div class="about-features">
+                <ul>
+                    <li><i class="fas fa-check"></i> Real-time crime data analysis</li>
+                    <li><i class="fas fa-check"></i> AI-powered threat detection</li>
+                    <li><i class="fas fa-check"></i> Intelligent route optimization</li>
+                    <li><i class="fas fa-check"></i> Instant emergency response</li>
+                    <li><i class="fas fa-check"></i> Community-driven safety network</li>
+                    <li><i class="fas fa-check"></i> Privacy-first design</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <h2>Get Help</h2>
+        <div class="contact-content">
+            <div class="contact-info">
+                <h3>Emergency Contacts</h3>
+                <div class="contact-item">
+                    <i class="fas fa-phone"></i>
+                    <div>
+                        <h4>Police</h4>
+                        <p>100 (In India)</p>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-phone"></i>
+                    <div>
+                        <h4>Women Helpline</h4>
+                        <p>1091 / 1098</p>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-envelope"></i>
+                    <div>
+                        <h4>Email Support</h4>
+                        <p>support@safeguard.com</p>
+                    </div>
+                </div>
+            </div>
+            <div class="feedback-form">
+                <h3>Send Us Feedback</h3>
+                <form onsubmit="submitFeedback(event)">
+                    <input type="email" placeholder="Your Email" required>
+                    <textarea placeholder="Your Message" rows="5" required></textarea>
+                    <button type="submit" class="btn btn-primary">Send Feedback</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2026 SafeGuard - Women Safety Network. All rights reserved.</p>
+        <p>Version 2.0 | Last Updated: March 2026 | <a href="#privacy">Privacy Policy</a></p>
+    </footer>
+
+    <!-- Modals -->
+    <div id="sosModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeSOS()">&times;</span>
+            <h2>Emergency SOS Alert</h2>
+            <p>You are about to send an emergency alert. This will notify:</p>
+            <ul>
+                <li>Police and authorities</li>
+                <li>Your emergency contacts</li>
+                <li>Nearby SafeGuard users</li>
+            </ul>
+            <div class="modal-buttons">
+                <button class="btn btn-danger" onclick="confirmSOS()">Confirm SOS</button>
+                <button class="btn btn-secondary" onclick="closeSOS()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

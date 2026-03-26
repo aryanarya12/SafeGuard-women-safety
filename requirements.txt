@@ -1,0 +1,16 @@
+Flask==2.3.0
+pandas==2.0.0
+numpy==1.24.0
+folium==0.14.0
+networkx==3.0
+OpenCV-python==4.7.0
+python-multipart==0.0.6
+requests==2.31.0
+geocoder==1.38.1
+scikit-learn==1.2.0
+Werkzeug==2.3.0
+Jinja2==3.1.0
+
+# Optional but recommended
+gunicorn==21.0.0
+python-dotenv==1.0.0
