@@ -92,7 +92,8 @@ def build_road_network():
         # Add crime weight to distance
         crime_weight = 1.0
         if crime_data is not None and len(crime_data) > max(src, tgt):
-            crime_weight = 1.0 + (crime_data['crime_score'].iloc[tgt] / 10.0)
+            if 'crime_score' in crime_data.columns:
+                crime_weight = 1.0 + (crime_data['crime_score'].iloc[tgt] / 10.0)
         
         total_weight = dist * crime_weight
         G.add_edge(src, tgt, weight=total_weight, distance=dist)
@@ -125,35 +126,31 @@ def health_check():
 
 @app.route('/api/cctv', methods=['GET', 'POST'])
 def cctv_monitoring():
-    """Start CCTV monitoring"""
+    """CCTV monitoring - Coming Soon"""
     try:
-        if request.method == 'GET':
-            return jsonify({
-                'status': 'success',
-                'message': 'CCTV monitoring activated',
-                'cameras_online': 127,
-                'threat_detection': 'active',
-                'face_recognition': 'enabled'
-            }), 200
-        else:
-            return jsonify({
-                'status': 'success',
-                'message': 'CCTV alert recorded'
-            }), 200
+        return jsonify({
+            'status': 'disabled',
+            'message': 'CCTV monitoring feature coming soon',
+            'note': 'This feature is currently disabled'
+        }), 200
     except Exception as e:
         logger.error(f"CCTV Error: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-@app.route('/api/gps', methods=['GET'])
+@app.route('/api/gps', methods=['GET', 'POST'])
 def gps_tracking():
     """GPS location tracking"""
     try:
-        data = request.get_json() or {}
+        if request.method == 'POST':
+            data = request.get_json() or {}
+        else:
+            data = request.args.to_dict()
+        
         return jsonify({
             'status': 'success',
-            'latitude': data.get('latitude', 28.6139),
-            'longitude': data.get('longitude', 77.2090),
-            'speed': data.get('speed', 0),
+            'latitude': float(data.get('latitude', 28.6139)),
+            'longitude': float(data.get('longitude', 77.2090)),
+            'speed': float(data.get('speed', 0)),
             'accuracy': 10,
             'timestamp': datetime.now().isoformat()
         }), 200
@@ -203,29 +200,48 @@ def find_safe_route():
             }), 400
         
         # Create map visualization
-        if crime_data is not None:
-            map_center = [
-                crime_data['latitude'].mean(),
-                crime_data['longitude'].mean()
-            ]
+        # Safe default coordinates for Delhi
+        default_lat, default_lng = 28.6139, 77.2090
+        
+        if crime_data is not None and len(crime_data) > 0:
+            # Try to get latitude/longitude, use defaults if not available
+            if 'latitude' in crime_data.columns and 'longitude' in crime_data.columns:
+                try:
+                    map_center = [
+                        float(crime_data['latitude'].mean()),
+                        float(crime_data['longitude'].mean())
+                    ]
+                except:
+                    map_center = [default_lat, default_lng]
+            else:
+                map_center = [default_lat, default_lng]
         else:
-            map_center = [28.6139, 77.2090]
+            map_center = [default_lat, default_lng]
         
         m = folium.Map(location=map_center, zoom_start=12)
         
-        # Add crime hotspots
-        if crime_data is not None:
+        # Add crime hotspots if available
+        if crime_data is not None and len(crime_data) > 0:
             for idx, row in crime_data.iterrows():
-                color = 'red' if row.get('crime_score', 0) > 6 else 'orange' if row.get('crime_score', 0) > 3 else 'green'
-                folium.CircleMarker(
-                    location=[row['latitude'], row['longitude']],
-                    radius=min(row.get('crime_score', 1) * 2, 25),
-                    color=color,
-                    fill=True,
-                    fill_color=color,
-                    fill_opacity=0.5,
-                    popup=f"Crime Score: {row.get('crime_score', 'N/A')}"
-                ).add_to(m)
+                # Check if latitude/longitude exist
+                if 'latitude' in row and 'longitude' in row:
+                    try:
+                        lat = float(row['latitude'])
+                        lng = float(row['longitude'])
+                        crime_score = row.get('crime_score', 5) if 'crime_score' in row else 5
+                        
+                        color = 'red' if crime_score > 6 else 'orange' if crime_score > 3 else 'green'
+                        folium.CircleMarker(
+                            location=[lat, lng],
+                            radius=min(float(crime_score) * 2, 25),
+                            color=color,
+                            fill=True,
+                            fill_color=color,
+                            fill_opacity=0.5,
+                            popup=f"Crime Score: {crime_score}"
+                        ).add_to(m)
+                    except (ValueError, TypeError):
+                        continue
         
         # Add safest path
         if len(safest_path) > 1:
@@ -355,7 +371,22 @@ def get_crime_hotspots():
         if crime_data is None or len(crime_data) == 0:
             hotspots = []
         else:
-            hotspots = crime_data[['latitude', 'longitude', 'crime_score']].to_dict('records')
+            # Select available columns
+            available_cols = [col for col in ['latitude', 'longitude', 'crime_score'] 
+                            if col in crime_data.columns]
+            if available_cols:
+                df = crime_data[available_cols].head(100).copy()
+                # Fill NaN values and convert to JSON-serializable format
+                df = df.fillna(0)
+                hotspots = []
+                for idx, row in df.iterrows():
+                    hotspots.append({
+                        'latitude': float(row['latitude']) if 'latitude' in row and pd.notna(row['latitude']) else 28.6139,
+                        'longitude': float(row['longitude']) if 'longitude' in row and pd.notna(row['longitude']) else 77.2090,
+                        'crime_score': float(row['crime_score']) if 'crime_score' in row and pd.notna(row['crime_score']) else 0
+                    })
+            else:
+                hotspots = []
         
         return jsonify({
             'status': 'success',
@@ -378,22 +409,28 @@ def check_nearby_threats():
         radius_km = float(data.get('radius', 2))
         
         nearby_threats = []
-        if crime_data is not None:
+        if crime_data is not None and ('latitude' in crime_data.columns and 'longitude' in crime_data.columns):
             for idx, row in crime_data.iterrows():
-                # Simple distance calculation
-                lat_diff = abs(row['latitude'] - user_lat)
-                lng_diff = abs(row['longitude'] - user_lng)
-                distance = np.sqrt(lat_diff**2 + lng_diff**2) * 111  # rough conversion to km
-                
-                if distance < radius_km:
-                    nearby_threats.append({
-                        'id': idx,
-                        'latitude': row['latitude'],
-                        'longitude': row['longitude'],
-                        'crime_score': row.get('crime_score', 0),
-                        'distance_km': round(distance, 2),
-                        'incident_type': row.get('incident_type', 'unknown')
-                    })
+                try:
+                    lat = float(row.get('latitude', 0))
+                    lng = float(row.get('longitude', 0))
+                    
+                    # Simple distance calculation
+                    lat_diff = abs(lat - user_lat)
+                    lng_diff = abs(lng - user_lng)
+                    distance = np.sqrt(lat_diff**2 + lng_diff**2) * 111  # rough conversion to km
+                    
+                    if distance < radius_km:
+                        nearby_threats.append({
+                            'id': idx,
+                            'latitude': lat,
+                            'longitude': lng,
+                            'crime_score': row.get('crime_score', 0),
+                            'distance_km': round(distance, 2),
+                            'incident_type': row.get('incident_type', 'unknown')
+                        })
+                except (ValueError, TypeError):
+                    continue
         
         return jsonify({
             'status': 'success',

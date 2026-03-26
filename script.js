@@ -172,29 +172,7 @@ function calculateDistance(lat1, lng1, lat2, lng2) {
 
 // ===== CCTV Monitoring =====
 function startCCTV() {
-    updateStatus('🎥 Initializing CCTV monitoring...');
-    
-    fetch('/api/cctv', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            updateStatus('✅ CCTV monitoring active');
-            showNotification('CCTV monitoring started. Real-time threat detection enabled.', 'success');
-        } else {
-            updateStatus('Error starting CCTV');
-            showNotification('Failed to start CCTV monitoring. Check connection.', 'error');
-        }
-    })
-    .catch(error => {
-        updateStatus('CCTV Error');
-        console.error('Error:', error);
-        showNotification('Could not connect to CCTV service.', 'error');
-    });
+    showNotification('CCTV monitoring feature coming soon!', 'warning');
 }
 
 // ===== GPS Speed Tracking =====
